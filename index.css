@@ -1,0 +1,11 @@
+.habit__label, .description__label {
+    top: 9px;
+    left: 17px;
+    opacity: 0.5;
+    transition: all 0.25s ease;
+}
+.moved__label {
+    opacity: 1;
+    top: -25px;
+    left: 2px;
+}
