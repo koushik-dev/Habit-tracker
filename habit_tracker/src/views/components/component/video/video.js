@@ -1,18 +1,30 @@
 import React, { useState, useRef } from "react";
 import "./video.scss";
 
+// get the click/touch side
+function clickedSide({ target, pageX }) {
+  const pos = pageX - target.parentElement.offsetLeft,
+    percent = (pos / target.clientWidth) * 100;
+
+  return percent > 50 ? 1 : -1;
+}
+
+// get the duration in 00:00 format
+function getDuration(time) {
+  const minutes = Math.floor(time / 60) + "",
+    seconds = Math.floor((time / 60 - minutes) * 60) + "";
+
+  return minutes.padStart(2, 0) + ":" + seconds.padStart(2, 0);
+}
+
 const VideoPlayer = ({ url }) => {
   const [time, setTime] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState("00:00");
   const [duration, setDuration] = useState("");
+  const [volumeTouch, setVolumeTouch] = useState(false);
+  const [prevPoint, setPrevPoint] = useState(0);
   const video = useRef();
-
-  // update the progress bar
-  function updateProgress({ target: e }) {
-    setTime((e.currentTime / e.duration) * 100);
-    setCurrentTime(getDuration(e.currentTime));
-  }
 
   // Toggle the play/pause function
   function togglePlay() {
@@ -22,12 +34,16 @@ const VideoPlayer = ({ url }) => {
     });
   }
 
-  // forward/rewind on double click
-  function changeCurrentTime({ target, pageX }) {
-    const pos = pageX - target.parentElement.offsetLeft,
-      percent = (pos / target.width) * 100;
+  // update the progress bar
+  function updateProgress({ target: e }) {
+    setTime((e.currentTime / e.duration) * 100);
+    setCurrentTime(getDuration(e.currentTime));
+  }
 
-    updateCurrentTime(10 * (percent > 50 ? 1 : -1));
+  // forward/rewind on double click
+  function changeCurrentTime(e) {
+    const side = clickedSide(e);
+    updateCurrentTime(10 * side);
   }
 
   // update the current time
@@ -35,16 +51,37 @@ const VideoPlayer = ({ url }) => {
     video.current.currentTime += time;
   }
 
-  // get the duration in 00:00 format
-  function getDuration(time) {
-    const minutes = Math.floor(time / 60) + "",
-      seconds = Math.floor((time / 60 - minutes) * 60) + "";
+  // change volume
+  function changeVolume({ touches, changedTouches }) {
+    const yAxis = changedTouches[0].clientY;
+    let _vol = video.current.volume;
 
-    return minutes.padStart(2, 0) + ":" + seconds.padStart(2, 0);
+    if (volumeTouch) {
+      if (prevPoint > yAxis) {
+        console.log("increase volume");
+        if (_vol < 1) _vol += 0.1;
+      } else {
+        console.log("decrease volume");
+        if (_vol > 0) _vol -= 0.1;
+      }
+      video.current.volume = +_vol.toFixed(1);
+      console.log(video.current.volume);
+    }
+    setPrevPoint(yAxis);
   }
 
   return (
     <div className="player">
+      {/* volume bar */}
+      {volumeTouch && (
+        <progress
+          className="player__volume"
+          value={video?.current?.volume}
+          min="0"
+          max="1"
+        ></progress>
+      )}
+
       {/* Video panel */}
       <video
         className="player__video"
@@ -54,6 +91,12 @@ const VideoPlayer = ({ url }) => {
         }
         onClick={togglePlay}
         onDoubleClick={changeCurrentTime}
+        onTouchStart={(e) => {
+          setVolumeTouch(clickedSide(e.touches[0]) > 0);
+          setPrevPoint(e.touches[0].clientY);
+        }}
+        onTouchMove={changeVolume}
+        onTouchEnd={() => setVolumeTouch(false)}
         onTimeUpdate={updateProgress}
       >
         <source src={url} type="video/mp4" />
@@ -69,6 +112,26 @@ const VideoPlayer = ({ url }) => {
 
         {/* toolbar items */}
         <div className="player__controls__buttons">
+          {/* playback rate */}
+          <input type="range" min="0.5" max="2" step="0.1" list="tickmarks" />
+          <datalist id="tickmarks">
+            <option value="0.5"></option>
+            <option value="0.6"></option>
+            <option value="0.7"></option>
+            <option value="0.8"></option>
+            <option value="0.9"></option>
+            <option value="1"></option>
+            <option value="1.1"></option>
+            <option value="1.2"></option>
+            <option value="1.3"></option>
+            <option value="1.4"></option>
+            <option value="1.5"></option>
+            <option value="1.6"></option>
+            <option value="1.7"></option>
+            <option value="1.8"></option>
+            <option value="1.9"></option>
+            <option value="2"></option>
+          </datalist>
           <button
             className="player__controls__buttons__rewind"
             onClick={() => updateCurrentTime(-10)}

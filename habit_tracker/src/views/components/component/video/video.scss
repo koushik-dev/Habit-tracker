@@ -14,6 +14,19 @@
     overflow: hidden;
     width: 500px;
     height: 300px;
+    &__volume {
+        position: absolute;
+        right: 0;
+        transform: rotateZ(-90deg) translate(-75%, 350%);
+        border: 1px solid #8a8a8a;
+        -webkit-appearance: none;
+        &::-webkit-progress-bar {
+            background-color: transparent;
+        }
+        &::-webkit-progress-value {
+            background-color: #abcdef;
+        }
+    }
     &__video {
         display: block;
         width: 100%;
