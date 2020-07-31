@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import "./video.scss";
 
 // get the click/touch side
@@ -17,14 +17,24 @@ function getDuration(time) {
   return minutes.padStart(2, 0) + ":" + seconds.padStart(2, 0);
 }
 
-const VideoPlayer = ({ url }) => {
+const VideoPlayer = ({ url, poster = "", isSkipPlay = false, preload }) => {
   const [time, setTime] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState("00:00");
   const [duration, setDuration] = useState("");
   const [volumeTouch, setVolumeTouch] = useState(false);
   const [prevPoint, setPrevPoint] = useState(0);
+  const [buffer, setBuffer] = useState(0);
   const video = useRef();
+
+  // for thumbnail autoplay
+  useEffect(() => {
+    setPlaying(isSkipPlay);
+    video.current.muted = false;
+    if(isSkipPlay) {
+      
+    }
+  }, [isSkipPlay]);
 
   // Toggle the play/pause function
   function togglePlay() {
@@ -37,6 +47,8 @@ const VideoPlayer = ({ url }) => {
   // update the progress bar
   function updateProgress({ target: e }) {
     setTime((e.currentTime / e.duration) * 100);
+
+    // Set the time on the player
     setCurrentTime(getDuration(e.currentTime));
   }
 
@@ -49,6 +61,21 @@ const VideoPlayer = ({ url }) => {
   // update the current time
   function updateCurrentTime(time) {
     video.current.currentTime += time;
+  }
+
+  //move video seeker
+  function updateSeeker({ currentTarget: target, pageX }) {
+    const targetPos = target.getBoundingClientRect(),
+          movedPosition = pageX - targetPos.left,
+          movedPercent = (movedPosition / targetPos.width),
+          percentInTime = (video.current.duration * (movedPercent));
+
+    // update the video time
+    video.current.currentTime = +percentInTime
+
+    //update progress bar
+    updateProgress({ target: video.current })
+
   }
 
   // change volume
@@ -68,6 +95,16 @@ const VideoPlayer = ({ url }) => {
       console.log(video.current.volume);
     }
     setPrevPoint(yAxis);
+  }
+
+  //update buffer
+  function updateBuffer() {
+    const vid = video.current;
+    vid.buffered && setBuffer(
+      Math.floor(
+        (vid.buffered.end(vid.buffered.length - 1) / vid.duration) * 100
+      )
+    );
   }
 
   return (
@@ -98,17 +135,25 @@ const VideoPlayer = ({ url }) => {
         onTouchMove={changeVolume}
         onTouchEnd={() => setVolumeTouch(false)}
         onTimeUpdate={updateProgress}
+        onProgress={updateBuffer}
+        preload={preload}
+        muted
+        poster={poster}
       >
         <source src={url} type="video/mp4" />
       </video>
       <div className="player__controls">
         {/* Progress bar */}
-        <progress
-          className="player__controls__progress"
-          value={time}
-          min="0"
-          max="100"
-        ></progress>
+        <div className="player__controls__progress" onClick={updateSeeker}>
+          <div
+            className="player__controls__progress__buffer"
+            style={{ width: buffer + "%" }}
+          ></div>
+          <div
+            className="player__controls__progress__seeker"
+            style={{ width: time + "%" }}
+          ></div>
+        </div>
 
         {/* toolbar items */}
         <div className="player__controls__buttons">
