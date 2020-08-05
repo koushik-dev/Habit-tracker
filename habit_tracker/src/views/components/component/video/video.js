@@ -21,7 +21,7 @@ const VideoPlayer = ({ url, poster = "", isSkipPlay = false, preload }) => {
   const [time, setTime] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState("00:00");
-  const [duration, setDuration] = useState("");
+  const [duration, setDuration] = useState("00:00");
   const [volumeTouch, setVolumeTouch] = useState(false);
   const [prevPoint, setPrevPoint] = useState(0);
   const [buffer, setBuffer] = useState(0);
@@ -97,10 +97,15 @@ const VideoPlayer = ({ url, poster = "", isSkipPlay = false, preload }) => {
     setPrevPoint(yAxis);
   }
 
+  //change playback rate
+  function changePlayBackRate({ target: { value }}) {
+    video.current.playbackRate = value;
+  }
+
   //update buffer
   function updateBuffer() {
     const vid = video.current;
-    vid.buffered && setBuffer(
+    vid.buffered.length && setBuffer(
       Math.floor(
         (vid.buffered.end(vid.buffered.length - 1) / vid.duration) * 100
       )
@@ -158,31 +163,12 @@ const VideoPlayer = ({ url, poster = "", isSkipPlay = false, preload }) => {
         {/* toolbar items */}
         <div className="player__controls__buttons">
           {/* playback rate */}
-          <input type="range" min="0.5" max="2" step="0.1" list="tickmarks" />
-          <datalist id="tickmarks">
-            <option value="0.5"></option>
-            <option value="0.6"></option>
-            <option value="0.7"></option>
-            <option value="0.8"></option>
-            <option value="0.9"></option>
-            <option value="1"></option>
-            <option value="1.1"></option>
-            <option value="1.2"></option>
-            <option value="1.3"></option>
-            <option value="1.4"></option>
-            <option value="1.5"></option>
-            <option value="1.6"></option>
-            <option value="1.7"></option>
-            <option value="1.8"></option>
-            <option value="1.9"></option>
-            <option value="2"></option>
-          </datalist>
-          <button
-            className="player__controls__buttons__rewind"
-            onClick={() => updateCurrentTime(-10)}
-          >
-            {"<<"}
-          </button>
+          <select id="playback" onChange={changePlayBackRate} defaultValue="1">
+            <option value="0.5">0.5</option>
+            <option value="1">1</option>
+            <option value="1.5">1.5</option>
+            <option value="2">2</option>
+          </select>
 
           {/* Play/Pause button */}
           <button
@@ -197,11 +183,19 @@ const VideoPlayer = ({ url, poster = "", isSkipPlay = false, preload }) => {
               }
             ></div>
           </button>
+
+          <button
+            className="player__controls__buttons__rewind"
+            onClick={() => updateCurrentTime(-10)}
+          >
+            {"<< 10s"}
+          </button>
+
           <button
             className="player__controls__buttons__forward"
             onClick={() => updateCurrentTime(10)}
           >
-            {">>"}
+            {"10s >>"}
           </button>
           {/* Time stamp */}
           <span className="player__controls__buttons__time">
